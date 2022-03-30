@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  usage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: logview default configuration
+      run: |
+        # No configuration file.
+        # The archive is from tmarktaylor/pytest-phmdoctest
+        python logview.py archives/logs_19.zip
