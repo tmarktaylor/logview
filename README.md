@@ -11,3 +11,5 @@ Command line tool processes GitHub actions log archive .zip file.
   lauched by an IDE.
 - Colorizes phrases.
 - Override default configuration by providing a .toml file. 
+
+Requires Python Package Index packages colorama and tomli.
