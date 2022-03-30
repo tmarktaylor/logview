@@ -25,4 +25,4 @@ jobs:
       run: |
         # No configuration file.
         # The archive is from tmarktaylor/pytest-phmdoctest
-        python logview.py archives/logs_19.zip
+        python logview.py tests/archives/logs_19.zip
