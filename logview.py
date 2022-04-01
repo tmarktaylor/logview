@@ -1,5 +1,7 @@
 """Display parts of GitHub Action log zip files.
 
+https://github.com/tmarktaylor/logview
+
 Copyright (c) 2022 Mark Taylor
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -42,23 +44,20 @@ except ModuleNotFoundError:
 
 @dataclass
 class Highlighter:
-    """A string and terminal color code start sequence."""
+    """Colorizes text using terminal color code sequence."""
 
     text: str
     effect: str
 
     def __post_init__(self) -> None:
-        self._code_sequence = self.effect + self.text + str(Fore.RESET)
-
-    def highlighted(self) -> str:
-        return self._code_sequence
+        self.highlighted = self.effect + self.text + str(Fore.RESET)
 
 
 def colorize_line(line: str, phrases: List[Highlighter]) -> str:
     # Colorize all phrases in the line.
     if chr(27) + "[" not in line:  # ANSI start sequence
         for phrase in phrases:
-            line = line.replace(phrase.text, phrase.highlighted())
+            line = line.replace(phrase.text, phrase.highlighted)
     return line
 
 
@@ -138,11 +137,8 @@ class Config:
             config = tomllib.loads(default_config)
         else:
             path = Path(filename)
-            if path.exists():
-                text = path.read_text(encoding="utf-8")
-                config = tomllib.loads(text)
-            else:
-                raise FileNotFoundError(path)
+            text = path.read_text(encoding="utf-8")
+            config = tomllib.loads(text)
 
         self._my_config = config["tool"]["logview"]
         self.phrases: List[Highlighter] = []
@@ -220,7 +216,8 @@ class MemberFilter:
             for filename_parts in self._parts:
                 if len(filename_parts) == len(pattern_parts):
                     if all(
-                        fnmatch.fnmatch(f, p) for f, p in zip(filename_parts, pattern_parts)
+                        fnmatch.fnmatch(f, p)
+                        for f, p in zip(filename_parts, pattern_parts)
                     ):
                         matches.append("/".join(filename_parts))
         return matches
@@ -323,11 +320,6 @@ def check_one_file(
     return errors
 
 
-def logfile_timestamp_keyfunc(m: MemberFilter) -> str:
-    """Sort key function."""
-    return m.timestamp
-
-
 def locate_log_file(config) -> Optional[Path]:
     """Path to newest log archive meeting criteria."""
     files: List[Path] = []
@@ -385,9 +377,7 @@ def main() -> None:
     else:
         for file in args.files:
             path = Path(file)
-            if not path.exists():
-                raise FileNotFoundError(path)
-            if file.endswith(".toml"):
+            if path.suffix == ".toml":
                 config = Config(file)
                 print("read config from", file)
                 continue
