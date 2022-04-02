@@ -50,7 +50,10 @@ class Highlighter:
     effect: str
 
     def __post_init__(self) -> None:
-        self.highlighted = self.effect + self.text + str(Fore.RESET)
+        if self.effect == "NONE":
+            self.highlighted = self.text
+        else:
+            self.highlighted = self.effect + self.text + str(Fore.RESET)
 
 
 def colorize_line(line: str, phrases: List[Highlighter]) -> str:
@@ -101,15 +104,17 @@ excludes = [
     " Resolving deltas: ",
 ]
 
-# Entire line containing the string treated as error. Any case matches.
-errors = [
+summary_title = "errors"
+summary_color = "RED"
+# Entire line containing the string is added to summary. Any case matches.
+summary = [
     "warning",
      "error",
      "Process completed with exit code 1",
 ]
 
-# Line containing the exact string is exempt from errors checking above.
-error_exemptions = [
+# Line containing the exact string is exempt from summary checking above.
+summary_exemptions = [
     "Evaluating continue on error",
     "hint: of your new repositories, which will suppress this warning, call:",
     "fail_ci_if_error: false",
@@ -226,7 +231,7 @@ class MemberFilter:
 def show_action_log(logfile_name: Path, config: Config) -> None:
     """Display selected logs from GH Actions zip log file.  Colorize parts."""
     print(logfile_name)
-    errors: List[str] = []
+    summary: List[str] = []
     with ZipFile(logfile_name) as zip:
         print()
         matcher = MemberFilter(zip)
@@ -244,18 +249,21 @@ def show_action_log(logfile_name: Path, config: Config) -> None:
             # Check all files for errors even if they are not printed.
             text = zip.read(filename1).decode(encoding="utf-8")
             e = check_one_file(config, filename1, text, is_printed=is_printed)
-            errors.extend(e)
+            summary.extend(e)
 
         print()
         print()
-        if errors:
-            print("------------------- errors -------------------")
-            error_phrases = [Highlighter(s, Fore.RED) for s in config.get("errors")]
-            for line in errors:
+        if summary:
+            title = config.get("summary_title")
+            color = config.get("summary_color")
+            color_sequence = ColorName[color].value
+            print(title.join([" ------------------- ", " ------------------- "]))
+            error_phrases = [Highlighter(s, color_sequence) for s in config.get("summary")]
+            for line in summary:
                 line = colorize_line(line, error_phrases)
                 print(line)
         else:
-            print("No errors or warnings found.")
+            print("Nothing found for summary.")
 
         # Repeat a few specific archive members at the very end.
         # Not subject to the do_not_show configuration.
@@ -280,9 +288,9 @@ def check_one_file(
     config: Config, filename: str, text: str, is_printed: bool
 ) -> List[str]:
     """Colorize phrases in text and check for error phrases."""
-    errors = []
+    summary = []
     lowered_errors = [
-        e.lower() for e in config.get("errors")
+        e.lower() for e in config.get("summary")
     ]  # assure case insensitive
     lines = text.splitlines()
     for num, line in enumerate(lines, start=1):
@@ -305,19 +313,23 @@ def check_one_file(
             for error in lowered_errors
             if error in lowered_line
             and not any(
-                True for exempt in config.get("error_exemptions") if exempt in line
+                True for exempt in config.get("summary_exemptions") if exempt in line
             )
         ):
-            # Always print errors
-            line = colorize_line(line, [Highlighter(line, Fore.MAGENTA)])
-            errors.append("{: 3d} {} {}".format(num, filename, line))
-            print(format(num, " 3d"), line)
+            # Save to summary without colorizing.
+            summary.append("{: 3d} {} {}".format(num, filename, line))
+            if is_printed:
+                # Print entire colorized line identified for the summary.
+                color = config.get("summary_color")
+                color_sequence = ColorName[color].value
+                line = colorize_line(line, [Highlighter(line, color_sequence)])
+                print(format(num, " 3d"), line)
         else:
             if is_printed:
                 # Colorize all phrases in the line.
                 line = colorize_line(line, config.phrases)
                 print(format(num, " 3d"), line)
-    return errors
+    return summary
 
 
 def locate_log_file(config) -> Optional[Path]:

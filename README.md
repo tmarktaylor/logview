@@ -14,6 +14,22 @@ Command line tool processes GitHub actions log archive .zip file.
 
 Requires Python Package Index packages colorama and tomli.
 
-[![](https://img.shields.io/pypi/l/phmdoctest.svg)](https://github.com/tmarktaylor/logview/blob/master/LICENSE.txt)
+[License](https://github.com/tmarktaylor/logview/blob/master/LICENSE.txt)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI Test](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml/badge.svg)](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml)
+
+## Installation
+
+- Suggest installing in a Python virtual environment.
+- Copy the file logview.py to a folder that is on PYTHONPATH.
+- Install dependencies:
+```shell
+python -m pip install --upgrade pip
+python -m pip install colorama
+python -m pip install tomli
+```
+
+# Hints
+- This project is unversioned and subject to future breaking changes.
+- Text within archive members may change over time requiring
+  updates to search patterns.

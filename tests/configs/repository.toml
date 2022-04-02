@@ -1,0 +1,57 @@
+# todo- obsolete, moved to v1/.mine
+[tool.logview]
+
+log_file_directory = "C:\\Users\\code\\Documents\\ghdownloads"
+archives = "logs*.zip"
+contains_member = ""
+# todo- mentions_repository
+# todo- search top level files for first repository matching "repository: tmarktalyor"
+
+# Do not scan for errors or display contents
+do_not_scan = [
+    "*/*",
+]
+
+# Don't display contents of these archive files.
+# Do check for and display errors.
+do_not_show = [
+    "*.txt",
+    "*/*.txt",
+]
+
+# Shows again at the end (May be for a second time.).
+# Print file members whose filenames match.
+# Python fnmatch.fnmatch() describes the pattern.
+show_at_end = [
+]
+
+# Retain the timestamp at the start of each log line.
+keep_timetags = false
+
+# Exclude log lines containing any of these patterns.
+excludes = [
+    "Syncing repository: ",
+]
+
+# todo- additional summaries
+# todo- prob want a toml vector? of multiple summary sections
+# todo- docstring like documentation for the config file
+summary_title = "repository"
+summary_color = "NONE"
+# Entire line containing the string is added to summary. Any case matches.
+summary = [
+    "repository: ",
+]
+
+# Line containing the exact string is exempt from summary checking above.
+summary_exemptions = [
+]
+
+# Colorize these phrases in a log line. The color must be a name
+# defined by colorama.Fore.
+[tool.logview.phrases]
+    " OK" = "GREEN"
+    "PASSED" = "GREEN"
+    "FAILED" = "RED"
+    "SKIPPED" = "LIGHTYELLOW_EX"
+    "hint:" =  "GREEN"
