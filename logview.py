@@ -50,7 +50,10 @@ class Highlighter:
     effect: str
 
     def __post_init__(self) -> None:
-        self.highlighted = self.effect + self.text + str(Fore.RESET)
+        if self.effect == "NONE":
+            self.highlighted = self.text
+        else:
+            self.highlighted = self.effect + self.text + str(Fore.RESET)
 
 
 def colorize_line(line: str, phrases: List[Highlighter]) -> str:
@@ -83,33 +86,42 @@ class ColorName(Enum):
     YELLOW = Fore.YELLOW
 
 
+# todo- additional summaries
+# todo- prob want a toml vector? of multiple summary sections
+# todo- docstring like documentation for the config file
+
 default_config = """
 [tool.logview]
+# Provide direction to --auto-locate-logfile
 log_file_directory = ""
 archives = "logs*.zip"
-contains_member = "*.txt"
+repository = ""    # <GitHub user login name>/project
+contains_member = "*.txt"  # archive member (wildcards allowed)
+
 do_not_scan = ["*",]
 do_not_show = []
 show_at_end = []
 keep_timetags = false
 
-# Exclude log lines containing any of these patterns.
-excludes = [
+# Do not print log lines containing any of these patterns.
+do_not_print = [
     " remote: Counting objects: ",
     " remote: Compressing objects: ",
     " Receiving objects: ",
     " Resolving deltas: ",
 ]
 
-# Entire line containing the string treated as error. Any case matches.
-errors = [
+summary_title = "errors"
+summary_color = "RED"
+# Entire line containing the string is added to summary. Any case matches.
+summary_patterns = [
     "warning",
      "error",
      "Process completed with exit code 1",
 ]
 
-# Line containing the exact string is exempt from errors checking above.
-error_exemptions = [
+# Line containing the exact string is exempt from summary checking above.
+summary_exemptions = [
     "Evaluating continue on error",
     "hint: of your new repositories, which will suppress this warning, call:",
     "fail_ci_if_error: false",
@@ -129,17 +141,15 @@ error_exemptions = [
 class Config:
     """Process TOML configuration file parts into object attributes."""
 
-    def __init__(self, filename: str):
+    def __init__(self, config_file_path: Optional[Path]):
         """Decode .toml configuration file."""
-        self.filename = filename
+        self.config_file_path = config_file_path
         # Use default values if filename is an empty string.
-        if not filename:
-            config = tomllib.loads(default_config)
+        if config_file_path is None:
+            text = default_config
         else:
-            path = Path(filename)
-            text = path.read_text(encoding="utf-8")
-            config = tomllib.loads(text)
-
+            text = config_file_path.read_text(encoding="utf-8")
+        config = tomllib.loads(text)
         self._my_config = config["tool"]["logview"]
         self.phrases: List[Highlighter] = []
         for text, color in self._my_config["phrases"].items():
@@ -223,13 +233,31 @@ class MemberFilter:
         return matches
 
 
-def show_action_log(logfile_name: Path, config: Config) -> None:
+def identify_repository(matcher: MemberFilter, zip: ZipFile) -> Optional[str]:
+    """Look for repository line in the top level files. Return first one.
+
+    Assumes the action script only checked out one repository.
+    """
+    for member in matcher.select(["*.txt"]):
+        text = zip.read(member).decode(encoding="utf-8")
+        lines = text.splitlines()
+        for line in lines:
+            m = re.search(pattern=r"^.*  repository: (.*)$", string=line)
+            if m:
+                return m.group(1)
+    return None
+
+
+def show_action_log(logfile_path: Path, config: Config) -> None:
     """Display selected logs from GH Actions zip log file.  Colorize parts."""
-    print(logfile_name)
-    errors: List[str] = []
-    with ZipFile(logfile_name) as zip:
-        print()
+    print(logfile_path)
+    summary: List[str] = []
+    with ZipFile(logfile_path) as zip:
         matcher = MemberFilter(zip)
+        repository = identify_repository(matcher, zip)
+        if repository:
+            print("repository: ", repository)
+        print()
         not_scanned = set(matcher.select(config.get("do_not_scan")))
         not_printed = set(matcher.select(config.get("do_not_show")))
         for filename1 in matcher.ordered_filenames:
@@ -244,18 +272,23 @@ def show_action_log(logfile_name: Path, config: Config) -> None:
             # Check all files for errors even if they are not printed.
             text = zip.read(filename1).decode(encoding="utf-8")
             e = check_one_file(config, filename1, text, is_printed=is_printed)
-            errors.extend(e)
+            summary.extend(e)
 
         print()
         print()
-        if errors:
-            print("------------------- errors -------------------")
-            error_phrases = [Highlighter(s, Fore.RED) for s in config.get("errors")]
-            for line in errors:
+        if summary:
+            title = config.get("summary_title")
+            color = config.get("summary_color")
+            color_sequence = ColorName[color].value
+            print(title.join([" ------------------- ", " ------------------- "]))
+            error_phrases = [
+                Highlighter(s, color_sequence) for s in config.get("summary_patterns")
+            ]
+            for line in summary:
                 line = colorize_line(line, error_phrases)
                 print(line)
         else:
-            print("No errors or warnings found.")
+            print("Nothing found for summary.")
 
         # Repeat a few specific archive members at the very end.
         # Not subject to the do_not_show configuration.
@@ -273,28 +306,28 @@ def show_action_log(logfile_name: Path, config: Config) -> None:
                 print()
 
         print()
-        print(logfile_name, matcher.timestamp)
+        print(logfile_path, matcher.timestamp)
 
 
 def check_one_file(
     config: Config, filename: str, text: str, is_printed: bool
 ) -> List[str]:
     """Colorize phrases in text and check for error phrases."""
-    errors = []
+    summary = []
     lowered_errors = [
-        e.lower() for e in config.get("errors")
+        e.lower() for e in config.get("summary_patterns")
     ]  # assure case insensitive
     lines = text.splitlines()
     for num, line in enumerate(lines, start=1):
-        # Discard the line if it has any of _excludes as a substring.
-        if any(True for pattern in config.get("excludes") if pattern in line):
+        # Discard the line if it has any from do_not_print key as a substring.
+        if any(True for pattern in config.get("do_not_print") if pattern in line):
             continue
 
         if not config.get("keep_timetags"):
             # Chop off the start of the line which is assumed to start
             # with a time tag like this: 2021-11-14T02:31:28.6752380Z
             line = line[TIMETAG_SIZE:]
-        # Highlight and save for error summary if flagging an error.
+        # Highlight and save for error summary if flagging a line.
         # Flag if line contains a string from _errors and line does not
         # contain a string from config error_exemptions.
         # config errors strings are case-insensitive.
@@ -305,19 +338,23 @@ def check_one_file(
             for error in lowered_errors
             if error in lowered_line
             and not any(
-                True for exempt in config.get("error_exemptions") if exempt in line
+                True for exempt in config.get("summary_exemptions") if exempt in line
             )
         ):
-            # Always print errors
-            line = colorize_line(line, [Highlighter(line, Fore.MAGENTA)])
-            errors.append("{: 3d} {} {}".format(num, filename, line))
-            print(format(num, " 3d"), line)
+            # Save to summary without colorizing.
+            summary.append("{: 3d} {} {}".format(num, filename, line))
+            if is_printed:
+                # Print entire colorized line identified for the summary.
+                color = config.get("summary_color")
+                color_sequence = ColorName[color].value
+                line = colorize_line(line, [Highlighter(line, color_sequence)])
+                print(format(num, " 3d"), line)
         else:
             if is_printed:
                 # Colorize all phrases in the line.
                 line = colorize_line(line, config.phrases)
                 print(format(num, " 3d"), line)
-    return errors
+    return summary
 
 
 def locate_log_file(config) -> Optional[Path]:
@@ -333,6 +370,9 @@ def locate_log_file(config) -> Optional[Path]:
             # Check for presence of members that match the pattern.
             members = matcher.select([config.get("contains_member")])
             if members:
+                timestamps.append((matcher.timestamp, file))
+            repository = identify_repository(matcher, zip)
+            if repository == config.get("repository"):
                 timestamps.append((matcher.timestamp, file))
     if timestamps:
         newest_order = sorted(timestamps, reverse=True)
@@ -357,19 +397,20 @@ def main() -> None:
         nargs="+",
     )
     args = parser.parse_args()
-    config = Config("")  # This is the default config
+    config = Config(None)  # This is the default config
     if args.auto_locate_logfile:
         # Use config to locate a log file.
         if args.files:
             # The first file must be the config file, all other files are ignored.
-            config = Config(args.files[0])
-            print("read config from", config.filename)
+            config = Config(Path(args.files[0]))
+            print("read config from", config.config_file_path)
         log_file = locate_log_file(config)
         log_file_directory = Path(config.get("log_file_directory"))
         if not log_file:
             print("Could not find a logfile meeting criteria:")
             print("  log file directory=", log_file_directory)
             print("  archives=", config.get("archives"))
+            print("  repository=", config.get("repository"))
             print("  contains_member=", config.get("contains_member"))
         else:
             print("log file directory=", log_file_directory)
@@ -378,11 +419,11 @@ def main() -> None:
         for file in args.files:
             path = Path(file)
             if path.suffix == ".toml":
-                config = Config(file)
+                config = Config(path)
                 print("read config from", file)
                 continue
             print("+=" * 50)
-            show_action_log(Path(file), config=config)
+            show_action_log(path, config=config)
 
 
 if __name__ == "__main__":

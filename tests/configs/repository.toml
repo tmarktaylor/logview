@@ -1,0 +1,54 @@
+[tool.logview]
+
+# Provide direction to --auto-locate-logfile
+log_file_directory = "tests/configs"
+archives = "logs*.zip"
+repository = ""   # <GitHub user login name>/project
+contains_member = ""  # "*.txt" (wildcards allowed)
+
+
+# Do not scan for errors or display contents
+do_not_scan = [
+    "*/*",
+]
+
+# Don't display contents of these archive files.
+# Do check for and display errors.
+do_not_show = [
+    "*.txt",
+    "*/*.txt",
+]
+
+# Shows again at the end (May be for a second time.).
+# Print file members whose filenames match.
+# Python fnmatch.fnmatch() describes the pattern.
+show_at_end = [
+]
+
+# Retain the timestamp at the start of each log line.
+keep_timetags = false
+
+# Do not print log lines containing any of these patterns.
+do_not_print = [
+    "Syncing repository: ",
+]
+
+summary_title = "repository"
+summary_color = "NONE"
+# Entire line containing the string is added to summary. Any case matches.
+summary_patterns = [
+    "repository: ",
+]
+
+# Line containing the exact string is exempt from summary checking above.
+summary_exemptions = [
+]
+
+# Colorize these phrases in a log line. The color must be a name
+# defined by colorama.Fore.
+[tool.logview.phrases]
+    " OK" = "GREEN"
+    "PASSED" = "GREEN"
+    "FAILED" = "RED"
+    "SKIPPED" = "LIGHTYELLOW_EX"
+    "hint:" =  "GREEN"
