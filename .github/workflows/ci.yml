@@ -27,5 +27,7 @@ jobs:
         # The archive is from tmarktaylor/pytest-phmdoctest
         python logview.py tests/archives/logs_19.zip
 
+    - name: configs/repository.toml
+      run: |
         # Configuration to show lines that identify the repository.
         python logview.py tests/configs/repository.toml tests/archives/logs_19.zip

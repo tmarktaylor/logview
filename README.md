@@ -10,11 +10,14 @@ Command line tool processes GitHub actions log archive .zip file.
 - Intended for use in a terminal either stand alone or one
   lauched by an IDE.
 - Colorizes phrases.
-- Override default configuration by providing a .toml file. 
+- Override default configuration by providing a .toml file.
+- Locates newest .zip for a specific repository.
+- See tests/configs and logview.py:default_config for
+  example configuration files.
 
 Requires Python Package Index packages colorama and tomli.
 
-[License](https://github.com/tmarktaylor/logview/blob/master/LICENSE.txt)
+[![GitHub](https://img.shields.io/github/license/tmarktaylor/logview)](https://github.com/tmarktaylor/logview/blob/master/LICENSE.txt)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI Test](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml/badge.svg)](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml)
 

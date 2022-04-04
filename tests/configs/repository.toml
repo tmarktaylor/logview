@@ -1,11 +1,11 @@
-# todo- obsolete, moved to v1/.mine
 [tool.logview]
 
-log_file_directory = "C:\\Users\\code\\Documents\\ghdownloads"
+# Provide direction to --auto-locate-logfile
+log_file_directory = "tests/configs"
 archives = "logs*.zip"
-contains_member = ""
-# todo- mentions_repository
-# todo- search top level files for first repository matching "repository: tmarktalyor"
+repository = ""   # <GitHub user login name>/project
+contains_member = ""  # "*.txt" (wildcards allowed)
+
 
 # Do not scan for errors or display contents
 do_not_scan = [
@@ -28,18 +28,15 @@ show_at_end = [
 # Retain the timestamp at the start of each log line.
 keep_timetags = false
 
-# Exclude log lines containing any of these patterns.
-excludes = [
+# Do not print log lines containing any of these patterns.
+do_not_print = [
     "Syncing repository: ",
 ]
 
-# todo- additional summaries
-# todo- prob want a toml vector? of multiple summary sections
-# todo- docstring like documentation for the config file
 summary_title = "repository"
 summary_color = "NONE"
 # Entire line containing the string is added to summary. Any case matches.
-summary = [
+summary_patterns = [
     "repository: ",
 ]
 
