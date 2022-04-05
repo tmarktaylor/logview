@@ -11,6 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup Python 3.x
+      id: setuppython
       uses: actions/setup-python@v2
       with:
         python-version: 3.x
@@ -21,13 +22,40 @@ jobs:
         python -m pip install tomli
         pip freeze
 
+    - name: Install test tools
+      run: |
+        python -m pip install coverage
+        python -m pip install phmdoctest
+        python -m pip install pytest
+
+    - name: Help
+      run: |
+        coverage run --branch -m logview -h
+        python logview.py -h > help.txt
+
     - name: logview default configuration
       run: |
         # No configuration file.
         # The archive is from tmarktaylor/pytest-phmdoctest
-        python logview.py tests/archives/logs_19.zip
+        coverage run --append --branch logview.py tests/archives/logs_19.zip
 
     - name: configs/repository.toml
       run: |
         # Configuration to show lines that identify the repository.
-        python logview.py tests/configs/repository.toml tests/archives/logs_19.zip
+        coverage run --append --branch logview.py tests/configs/repository.toml tests/archives/logs_19.zip
+
+    - name: Tests
+      run: |
+        coverage run --append --branch --source=logview.py -m pytest -v tests
+        coverage report --show-missing
+        coverage xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      if: success() && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/develop'))
+      continue-on-error: true
+      with:
+        file: coverage.xml
+        flags: pytest,python-${{ steps.setuppython.outputs.python-version }},ubuntu-latest
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
