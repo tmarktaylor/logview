@@ -52,7 +52,7 @@ jobs:
 
     - name: Test Readme
       run: |
-        pytest -vv tests/test_readme.py
+        python -m pytest -vv tests/test_readme.py
 
     - name: Upload Coverage HTML
       uses: actions/upload-artifact@v2
