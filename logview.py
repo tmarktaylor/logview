@@ -42,28 +42,6 @@ except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore
 
 
-@dataclass
-class Highlighter:
-    """Colorizes text using terminal color code sequence."""
-
-    text: str
-    effect: str
-
-    def __post_init__(self) -> None:
-        if self.effect == "NONE":
-            self.highlighted = self.text
-        else:
-            self.highlighted = self.effect + self.text + str(Fore.RESET)
-
-
-def colorize_line(line: str, phrases: List[Highlighter]) -> str:
-    # Colorize all phrases in the line.
-    if chr(27) + "[" not in line:  # ANSI start sequence
-        for phrase in phrases:
-            line = line.replace(phrase.text, phrase.highlighted)
-    return line
-
-
 class ColorName(Enum):
     """Lookup table to convert the Fore color name string to the ansi sequence."""
 
@@ -84,6 +62,28 @@ class ColorName(Enum):
     RESET = Fore.RESET
     WHITE = Fore.WHITE
     YELLOW = Fore.YELLOW
+
+
+@dataclass
+class Highlighter:
+    """Colorizes text using terminal color code sequence."""
+
+    text: str
+    color_enum: ColorName
+
+    def __post_init__(self) -> None:
+        if self.color_enum == ColorName.NONE:
+            self.highlighted = self.text
+        else:
+            self.highlighted = self.color_enum.value + self.text + str(Fore.RESET)
+
+
+def colorize_line(line: str, phrases: List[Highlighter]) -> str:
+    # Colorize all phrases in the line.
+    if chr(27) + "[" not in line:  # ANSI start sequence
+        for phrase in phrases:
+            line = line.replace(phrase.text, phrase.highlighted)
+    return line
 
 
 # todo- additional summaries
@@ -154,12 +154,12 @@ class Config:
         self.phrases: List[Highlighter] = []
         for text, color in self._my_config["phrases"].items():
             try:
-                ansi_sequence = ColorName[color].value
+                _ = ColorName[color]
             except KeyError:
                 msg = "Unknown color name {} in config file [tool.logview.phrases]"
                 print(msg.format(color))
                 raise
-            phrase = Highlighter(text=text, effect=ansi_sequence)
+            phrase = Highlighter(text=text, color_enum=ColorName[color])
             self.phrases.append(phrase)
 
     def get(self, name: str) -> Any:
@@ -279,13 +279,13 @@ def show_action_log(logfile_path: Path, config: Config) -> None:
         if summary:
             title = config.get("summary_title")
             color = config.get("summary_color")
-            color_sequence = ColorName[color].value
             print(title.join([" ------------------- ", " ------------------- "]))
             error_phrases = [
-                Highlighter(s, color_sequence) for s in config.get("summary_patterns")
+                Highlighter(text=s, color_enum=ColorName[color])
+                for s in config.get("summary_patterns")
             ]
             for line in summary:
-                line = colorize_line(line, error_phrases)
+                line = colorize_line(line=line, phrases=error_phrases)
                 print(line)
         else:
             print("Nothing found for summary.")
@@ -346,13 +346,15 @@ def check_one_file(
             if is_printed:
                 # Print entire colorized line identified for the summary.
                 color = config.get("summary_color")
-                color_sequence = ColorName[color].value
-                line = colorize_line(line, [Highlighter(line, color_sequence)])
+                line = colorize_line(
+                    line=line,
+                    phrases=[Highlighter(text=line, color_enum=ColorName[color])],
+                )
                 print(format(num, " 3d"), line)
         else:
             if is_printed:
                 # Colorize all phrases in the line.
-                line = colorize_line(line, config.phrases)
+                line = colorize_line(line=line, phrases=config.phrases)
                 print(format(num, " 3d"), line)
     return summary
 
