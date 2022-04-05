@@ -20,6 +20,7 @@ Requires Python Package Index packages colorama and tomli.
 [![GitHub](https://img.shields.io/github/license/tmarktaylor/logview)](https://github.com/tmarktaylor/logview/blob/master/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI Test](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml/badge.svg)](https://github.com/tmarktaylor/logview/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/tmarktaylor/logview/branch/main/graph/badge.svg?token=QUVFGD328B)](https://codecov.io/gh/tmarktaylor/logview)
 
 ## Installation
 
