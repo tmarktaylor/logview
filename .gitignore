@@ -1,6 +1,9 @@
 # owner's
 .mine/
 .idea/
+# Reserved for files created during testing.
+coverage_report.txt
+help.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
