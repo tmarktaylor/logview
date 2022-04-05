@@ -27,7 +27,6 @@ jobs:
         python -m pip install coverage
         python -m pip install phmdoctest
         python -m pip install pytest
-        coverage erase
 
     - name: Help
       run: |
@@ -48,6 +47,8 @@ jobs:
     - name: Tests
       run: |
         coverage run --append --branch --source=logview.py -m pytest -v tests
+        coverage report --show-missing
+        coverage xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
