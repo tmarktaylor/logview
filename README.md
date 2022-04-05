@@ -33,6 +33,7 @@ python -m pip install tomli
 ```
 
 ## Usage
+
 <!--phmdoctest-label usage-->
 ```shell
 usage: logview.py [-h] [--auto-locate-logfile] FILE [FILE ...]
@@ -40,7 +41,7 @@ usage: logview.py [-h] [--auto-locate-logfile] FILE [FILE ...]
 positional arguments:
   FILE                  One or more .toml or .zip files.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --auto-locate-logfile
                         Locate logfile specified by criteria in the .toml

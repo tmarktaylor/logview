@@ -2,6 +2,7 @@
 
 import difflib
 from itertools import zip_longest
+import re
 from pathlib import Path
 
 import phmdoctest.tool
@@ -36,8 +37,13 @@ labeled = phmdoctest.tool.FCBChooser("README.md")
 def test_usage(checker):
     """README default configuration is the same as code's default value."""
     want = labeled.contents(label="usage").rstrip()
+    # Remove sections of the help text that vary between Python version/OS.
+    want1 = re.sub(r"option.*:", "", string=want)
+    want2 = re.sub(r"optional_arguments.*:", "", string=want1)
     got = Path("help.txt").read_text(encoding="utf-8").rstrip()
-    checker(want, got)
+    got1 = re.sub(r"option.*:", "", string=got)
+    got2 = re.sub(r"optional_arguments.*:", "", string=got1)
+    checker(want2, got2)
 
 
 def test_default_configuration(checker):
