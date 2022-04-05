@@ -135,7 +135,7 @@ summary_exemptions = [
     "FAILED" = "RED"
     "SKIPPED" = "LIGHTYELLOW_EX"
     "hint:" =  "GREEN"
-"""
+""".lstrip()
 
 
 class Config:
@@ -359,7 +359,7 @@ def check_one_file(
     return summary
 
 
-def locate_log_file(config) -> Optional[Path]:
+def locate_log_file(config: Config) -> Optional[Path]:
     """Path to newest log archive meeting criteria."""
     files: List[Path] = []
     log_file_directory = Path(config.get("log_file_directory"))
