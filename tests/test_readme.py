@@ -51,11 +51,3 @@ def test_default_configuration(checker):
     want = labeled.contents(label="default-configuration").rstrip()
     got = logview.default_config
     checker(want, got)
-
-
-@pytest.mark.xfail  # todo- delete
-def test_coverage_report(checker):
-    """README coverage report is the same as the file written by CI action."""
-    want = labeled.contents(label="coverage-report").rstrip()
-    got = Path("coverage_report.txt").read_text(encoding="utf-8").rstrip()
-    checker(want, got)

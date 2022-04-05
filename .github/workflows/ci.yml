@@ -11,6 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup Python 3.x
+      id: setuppython
       uses: actions/setup-python@v2
       with:
         python-version: 3.x
@@ -37,26 +38,23 @@ jobs:
       run: |
         # No configuration file.
         # The archive is from tmarktaylor/pytest-phmdoctest
-        coverage run --branch --append logview.py tests/archives/logs_19.zip
+        coverage run --append --branch logview.py tests/archives/logs_19.zip
 
     - name: configs/repository.toml
       run: |
         # Configuration to show lines that identify the repository.
-        coverage run --branch --append logview.py tests/configs/repository.toml tests/archives/logs_19.zip
+        coverage run --append --branch logview.py tests/configs/repository.toml tests/archives/logs_19.zip
 
-    - name: Coverage Report
+    - name: Tests
       run: |
-        coverage report
-        coverage report > coverage_report.txt
-        coverage html
+        coverage run --append --branch --source=logview.py -m pytest -v tests
 
-    - name: Test Readme
-      run: |
-        python -m pytest -vv tests/test_readme.py
-
-    - name: Upload Coverage HTML
-      uses: actions/upload-artifact@v2
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      if: success() && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/develop'))
+      continue-on-error: true
       with:
-        name: htmlcov
-        path: htmlcov
-        retention-days: 15
+        file: coverage.xml
+        flags: pytest,python-${{ steps.setuppython.outputs.python-version }},ubuntu-latest
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}

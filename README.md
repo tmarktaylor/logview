@@ -35,7 +35,7 @@ python -m pip install tomli
 ## Usage
 
 <!--phmdoctest-label usage-->
-```shell
+```text
 usage: logview.py [-h] [--auto-locate-logfile] FILE [FILE ...]
 
 positional arguments:
@@ -96,15 +96,6 @@ summary_exemptions = [
     "SKIPPED" = "LIGHTYELLOW_EX"
     "hint:" =  "GREEN"
 
-```
-## Coverage Report
-<!--phmdoctest-label coverage-report-->
-```shell
-Name         Stmts   Miss Branch BrPart  Cover
-----------------------------------------------
-logview.py     228     49     91     10    77%
-----------------------------------------------
-TOTAL          228     49     91     10    77%
 ```
 
 ## Hints
